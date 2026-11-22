@@ -13,7 +13,7 @@ A web-based Student Information System developed using Flask, Python, HTML, CSS,
 |---|---|
 | Python | Backend development and application logic |
 | Flask | Web application framework and server-side routing |
-| HTML & CSS | Page structure and visual styling |
+| HTML | Page structure and visual styling |
 | JavaScript | Frontend interactivity and dynamic functionality |
 | MySQL | Relational database management and CRUD operations |
 
