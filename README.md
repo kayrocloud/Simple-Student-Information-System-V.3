@@ -22,3 +22,7 @@ A web-based Student Information System developed using Flask, Python, HTML, CSS,
 - **Routes** - Defines application routes for managing records, requests, and CRUD operations.
 - **Static** - JS files provides interactive frontend functionality. Folder also include images.
 - **Templates** - Contains HTML templates for the application's navigation and CRUD interfaces across students, courses, and colleges.
+
+## Files
+- **config.py** - Manages application configuration, including Flask settings, MySQL database credentials, and Cloudinary integration using environment variables.
+- **main.py** - Initializes the Flask application, registers routes and configurations, and runs the web server.
