@@ -1,0 +1,190 @@
+from ..extension import mysql
+
+'''
+Handles student data and database operations.
+'''
+
+class Student():
+    def __init__(self, id=None, firstname=None, lastname=None, course_code= None, year=None, gender=None, college = None, picture = None):
+        self.id = id
+        self.firstname = firstname
+        self.lastname = lastname
+        self.course_code = course_code
+        self.year=year
+        self.gender = gender
+        self.college = college
+        self.connection = mysql.connection
+        self.picture = picture
+
+    def add(self):
+        cursor = self.connection.cursor()
+        cursor.execute(
+            "INSERT INTO student (id, firstname, lastname, course_code, year, gender, picture) VALUES (%s, %s, %s, %s, %s, %s, %s)",
+            (self.id, self.firstname, self.lastname, self.course_code, self.year, self.gender, self.picture)
+        )
+        self.connection.commit()
+        cursor.close()
+    
+    def update(self, old_id):
+        cursor = self.connection.cursor()
+        try:
+            if not self.picture:
+                cursor.execute("SELECT picture FROM student WHERE id=%s", (old_id,))
+                row = cursor.fetchone()
+                if row:
+                    self.picture = row[0]
+
+            cursor.execute("""
+                UPDATE student
+                SET id=%s, firstname=%s, lastname=%s, course_code=%s, year=%s, gender=%s, picture=%s
+                WHERE id=%s
+            """, (
+                self.id,
+                self.firstname,
+                self.lastname,
+                self.course_code,
+                self.year,
+                self.gender,
+                self.picture,
+                old_id
+            ))
+            self.connection.commit()
+        except Exception as e:
+            print(f"Error updating student: {e}")
+            self.connection.rollback()
+        finally:
+            cursor.close()
+
+    def delete(self):
+        cursor = self.connection.cursor()
+        cursor.execute("DELETE FROM student WHERE id=%s", (self.id,))
+        self.connection.commit()
+        cursor.close()
+
+    @classmethod
+    def search(cls, input, filter):
+        # Searches student records using different filters, including ID, name, course, year, gender, and college.
+        cursor = mysql.connection.cursor()
+        students = []
+        if filter == "0":
+            cursor.execute("SELECT student.id, student.firstname, student.lastname, student.course_code, student.year, student.gender, course.college_code, student.picture FROM student LEFT JOIN course ON student.course_code = course.code LEFT JOIN college ON course.college_code = college.code WHERE student.id LIKE %s OR student.firstname LIKE %s OR student.lastname LIKE %s OR student.course_code LIKE %s OR student.year LIKE %s OR student.gender LIKE %s", (f"%{input}%", f"%{input}%", f"%{input}%", f"%{input}%", f"%{input}%", f"%{input}%"))
+        elif filter == "1":
+            cursor.execute("""
+                SELECT student.id, student.firstname, student.lastname, student.course_code, student.year, student.gender, course.college_code, student.picture
+                FROM student
+                LEFT JOIN course ON student.course_code = course.code
+                LEFT JOIN college ON course.college_code = college.code
+                WHERE student.id = %s
+            """, (input,))
+        elif filter == "2":
+            cursor.execute("SELECT student.id, student.firstname, student.lastname, student.course_code, student.year, student.gender, course.college_code, student.picture FROM student LEFT JOIN course ON student.course_code = course.code LEFT JOIN college ON course.college_code = college.code WHERE student.firstname LIKE %s", (f"%{input}%",))
+        elif filter == "3":
+            cursor.execute("SELECT student.id, student.firstname, student.lastname, student.course_code, student.year, student.gender, course.college_code, student.picture FROM student LEFT JOIN course ON student.course_code = course.code LEFT JOIN college ON course.college_code = college.code WHERE student.lastname LIKE %s", (f"%{input}%",))
+        elif filter == "4":
+            cursor.execute("SELECT student.id, student.firstname, student.lastname, student.course_code, student.year, student.gender, course.college_code, student.picture FROM student LEFT JOIN course ON student.course_code = course.code LEFT JOIN college ON course.college_code = college.code WHERE student.course_code LIKE %s", (f"%{input}%",))
+        elif filter == "5":
+            cursor.execute("SELECT student.id, student.firstname, student.lastname, student.course_code, student.year, student.gender, course.college_code, student.picture FROM student LEFT JOIN course ON student.course_code = course.code LEFT JOIN college ON course.college_code = college.code WHERE student.year LIKE %s", (f"%{input}%",))
+        elif filter == "6":
+            cursor.execute("SELECT student.id, student.firstname, student.lastname, student.course_code, student.year, student.gender, course.college_code, student.picture FROM student LEFT JOIN course ON student.course_code = course.code LEFT JOIN college ON course.college_code = college.code WHERE student.gender = %s", (f"{input}",))
+        elif filter == "7":
+            cursor.execute("""
+                    SELECT student.id, student.firstname, student.lastname, student.course_code, student.year, student.gender, course.college_code, student.picture
+                    FROM student 
+                    LEFT JOIN course ON student.course_code = course.code 
+                    LEFT JOIN college ON course.college_code = college.code 
+                    WHERE college.name LIKE %s OR college.code LIKE %s
+                    ORDER BY student.id
+                """, (f"%{input}%", f"%{input}%"))
+
+        for student_data in cursor.fetchall():
+            student = Student(
+                id=student_data[0],
+                firstname=student_data[1],
+                lastname=student_data[2],
+                course_code=student_data[3],
+                year=student_data[4],
+                gender=student_data[5],
+                college=student_data[6],
+                picture=student_data[7]  
+            )
+            students.append(student)
+        cursor.close()
+        return students
+
+    @classmethod
+    def get_all(cls,table_name = 'student'):
+        cursor = mysql.connection.cursor()
+        cursor.execute(f"SELECT student.id, student.firstname, student.lastname, student.course_code, student.year, student.gender, course.college_code , student.picture FROM student LEFT JOIN course ON student.course_code = course.code LEFT JOIN college ON course.college_code = college.code ORDER BY student.id")
+        student = []
+        for student_data in cursor.fetchall():
+            courses = Student(id = student_data[0] , firstname = student_data[1], lastname=student_data[2], course_code=student_data[3], year=student_data[4], gender=student_data[5], college=student_data[6], picture = student_data[7])
+            student.append(courses)
+        cursor.close()
+        return student
+    
+    @classmethod
+    def check_existing_id(cls,id):
+        cursor = mysql.connection.cursor()
+        cursor.execute("SELECT * FROM student WHERE id = %s", (id,))
+        student_data = cursor.fetchone()
+        cursor.close()
+        return student_data is not None
+    
+    @classmethod
+    def get_one(cls, id):
+        cursor = mysql.connection.cursor()
+        cursor.execute("SELECT * FROM student WHERE id = %s", (id,))
+        student_data = cursor.fetchone()
+        cursor.close()
+
+        if student_data:
+            return Student(
+                id=student_data[0],
+                firstname=student_data[1],
+                lastname=student_data[2],
+                course_code=student_data[3],
+                year=student_data[4],
+                gender=student_data[5],
+                picture=student_data[6]  # include picture from DB
+            )
+        return None
+
+    @classmethod
+    def get_paginated(cls, limit=50, offset=0):
+        cursor = mysql.connection.cursor()
+        cursor.execute("""
+            SELECT student.id, student.firstname, student.lastname, student.course_code, 
+                   student.year, student.gender, course.college_code, student.picture
+            FROM student
+            LEFT JOIN course ON student.course_code = course.code
+            LEFT JOIN college ON course.college_code = college.code
+            ORDER BY student.id
+            LIMIT %s OFFSET %s
+        """, (limit, offset))
+        
+        students = []
+        for student_data in cursor.fetchall():
+            student = Student(
+                id=student_data[0],
+                firstname=student_data[1],
+                lastname=student_data[2],
+                course_code=student_data[3],
+                year=student_data[4],
+                gender=student_data[5],
+                college=student_data[6],
+                picture=student_data[7]
+            )
+            students.append(student)
+        cursor.close()
+        return students
+
+    @classmethod
+    def get_total_count(cls):
+        cursor = mysql.connection.cursor()
+        cursor.execute("SELECT COUNT(*) FROM student")
+        count = cursor.fetchone()[0]
+        cursor.close()
+        return count
+
+    
+    
