@@ -17,3 +17,7 @@ A web-based Student Information System developed using Flask, Python, HTML, CSS,
 | JavaScript | Frontend interactivity and dynamic functionality |
 | MySQL | Relational database management and CRUD operations |
 
+## Folders
+- **Models** - Manage records and database interactions.
+- **Routes** - Defines application routes for managing records, requests, and CRUD operations.
+- **Static** - JS files provides interactive frontend functionality. Folder also include images.
